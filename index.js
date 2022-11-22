@@ -26,13 +26,15 @@ var CONNECTION_STRING = "mongodb+srv://admin:Eo8xPRdtfN4k4O7O@cluster0.gdemrye.m
 
 
 
- 
+//---- Import File Upload ----//
+var fileUpload = require('express-fileupload');
+var fs = require('fs'); //installed by default
+app.use(fileUpload());
+app.use('/Photos', Express.static(__dirname+'/Photos')); //In order to use directory for photos
 
-
-
-
-
-
+//---- Enable Cors Security For All Domains ----//
+var cors = require('cors');
+app.use(cors());
 
 //---- Define db Name ----//
 var DATABASE = "testdb";
@@ -51,10 +53,10 @@ app.listen(49146,()=>{
 
 
 app.get('/',(request, response)=>{
-    response.send('Hello World'); //Send a test message on postman
+    response.json('Hello World'); //Send a test message on postman
 })
 
-//------------ API Creation ------------//
+//------------ API Department Methods ------------//
 //---- Find Method ----//
 app.get('/api/department',(request,response)=>{
 
@@ -62,7 +64,7 @@ app.get('/api/department',(request,response)=>{
         if(error)
             console.log(error); //Log any errors
 
-        response.send(result);
+        response.json(result);
     })
 })
 
@@ -79,7 +81,7 @@ app.post('/api/department',(request,response)=>{
             DepartmentName : request.body['DepartmentName']
         });
 
-        response.send("Added Succesfully!");
+        response.json("Added Succesfully!");
     })
 })
 
@@ -100,7 +102,7 @@ app.put('/api/department',(request,response)=>{
             }
         );
 
-        response.send("Updated Succesfully!");
+        response.json("Updated Succesfully!");
    
 })
 
@@ -111,7 +113,88 @@ app.delete('/api/department/:id',(request,response)=>{
         DepartmentId:parseInt(request.params.id)
     });
 
-    response.send("Deleted Succesfully!");
+    response.json("Deleted Succesfully!");
 
 })
+
+//------------ API Employee Methods ------------//
+//---- Find Method ----//
+app.get('/api/employee',(request,response)=>{
+
+    database.collection("Employee").find({}).toArray((error,result)=>{ //.find({FILTERGOESHERE}), we get all data so no filter needed!
+        if(error)
+            console.log(error); //Log any errors
+
+        response.json(result);
+    })
+})
+
+//---- Post Method ----//
+//Remember to post as JSON instead of text in Postman App!!
+app.post('/api/employee',(request,response)=>{
+
+    database.collection("Employee").count({}, function(error, numOfDocs){
+        if(error)
+            console.log("error");
+
+        database.collection("Employee").insertOne({
+            EmployeeId : numOfDocs+1,
+            EmployeeName : request.body['EmployeeName'],
+            Department: request.body['Department'],
+            DateOfJoining: request.body['DateOfJoining'],
+            PhotoFileName: request.body['PhotoFileName'],
+        });
+
+        response.json("Added Succesfully!");
+    })
+})
+
+//---- Update Method ----//
+app.put('/api/employee',(request,response)=>{
+
+        database.collection("Employee").updateOne(
+            //Filter Criteria
+            {
+                "EmployeeId":request.body['EmployeeId']
+            },
+            //Update Criteria
+            {$set:
+                {
+                    EmployeeName : request.body['EmployeeName'],
+                    Department: request.body['Department'],
+                    DateOfJoining: request.body['DateOfJoining'],
+                    PhotoFileName: request.body['PhotoFileName'],
+                }
+                
+            }
+        );
+
+        response.json("Updated Succesfully!");
+   
+})
+
+//---- Delete Method ----//
+app.delete('/api/employee/:id',(request,response)=>{
+
+    database.collection("Employee").deleteOne({
+        EmployeeId:parseInt(request.params.id)
+    });
+
+    response.json("Deleted Succesfully!"); 
+
+})
+
+//---- Image Post Method ----//
+app.post('/api/employee/savefile',(request,response)=>{
+
+    fs.writeFile("./Photos/"+request.files.file.name, request.files.file.data, function(err){
+        if(err)
+            console.log(err);
+
+        response.json(request.files.file.name);
+    }
+    )
+})
+
+
 
